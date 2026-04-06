@@ -1,0 +1,5 @@
+fastapi[standard]>=0.115.0
+pydantic-settings
+google-genai
+python-dotenv
+websockets

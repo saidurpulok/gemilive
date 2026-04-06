@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Live AI Wrapper Test</title>
+    <script src="/sdk/liveai.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .log-container { height: 400px; overflow-y: auto; background: #f5f5f5; padding: 15px; border-radius: 8px; border: 1px solid #ddd; }
+        .msg { margin: 5px 0; padding: 8px 12px; border-radius: 8px; max-width: 80%; }
+        .msg.user { background: #e3f2fd; margin-left: auto; }
+        .msg.ai { background: #fff; border: 1px solid #ddd; }
+        .msg.system { color: #666; font-size: 0.9em; text-align: center; max-width: 100%; }
+        input, button, select { padding: 8px 12px; border-radius: 4px; border: 1px solid #ccc; }
+        button { background: #1976d2; color: white; border: none; cursor: pointer; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        button.stop { background: #d32f2f; }
+        .config-panel { background: #fff5e6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffe0b2; }
+        .config-panel label { display: block; margin-bottom: 8px; font-weight: bold; }
+        .config-panel input { width: 100%; margin-bottom: 15px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+    <h1>Live AI Testing Panel</h1>
+    
+    <div class="config-panel">
+        <label>App Token:</label>
+        <input type="text" id="token" value="app_token_1" placeholder="Enter App Token configured in .env">
+        <label>System Prompt:</label>
+        <input type="text" id="systemPrompt" value="You are a helpful assistant. Keep your responses very brief and practical." placeholder="Enter System Prompt">
+    </div>
+
+    <div class="controls">
+        <button id="btnConnect">Connect Video+Audio</button>
+        <button id="btnConnectAudio">Connect Audio Only</button>
+        <button id="btnDisconnect" class="stop" disabled>Disconnect</button>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="txtInput" placeholder="Type a message..." style="flex: 1" disabled>
+        <button id="btnSend" disabled>Send</button>
+    </div>
+
+    <div class="log-container" id="log"></div>
+
+    <script>
+        let client = null;
+        let aiMessageBuffer = "";
+        const logPanel = document.getElementById('log');
+        const btnConnect = document.getElementById('btnConnect');
+        const btnConnectAudio = document.getElementById('btnConnectAudio');
+        const btnDisconnect = document.getElementById('btnDisconnect');
+        const btnSend = document.getElementById('btnSend');
+        const txtInput = document.getElementById('txtInput');
+
+        function appendLog(text, role) {
+            const el = document.createElement('div');
+            el.className = `msg ${role}`;
+            el.innerText = text;
+            logPanel.appendChild(el);
+            logPanel.scrollTop = logPanel.scrollHeight;
+        }
+
+        async function initConnection(options) {
+            const token = document.getElementById('token').value;
+            const systemPrompt = document.getElementById('systemPrompt').value;
+            
+            // Assuming serving from the same host
+            const wsUrl = `ws://${window.location.host}/ws/live`;
+            
+            client = new LiveAIClient(wsUrl, { token, systemPrompt });
+            
+            appendLog("Connecting...", "system");
+            
+            client.onMessage = (text) => {
+                // Buffer the text or create new bubble
+                if (!aiMessageBuffer) {
+                    const el = document.createElement('div');
+                    el.className = `msg ai`;
+                    el.id = "current-ai-msg";
+                    logPanel.appendChild(el);
+                }
+                const aiEl = document.getElementById('current-ai-msg');
+                if (aiEl) {
+                    aiMessageBuffer += text;
+                    aiEl.innerText = aiMessageBuffer;
+                    logPanel.scrollTop = logPanel.scrollHeight;
+                }
+            };
+
+            client.onAudio = () => {
+                 if(!document.getElementById('current-ai-msg')) {
+                     appendLog("🎵 [Playing Audio]", "ai");
+                 }
+            }
+
+            client.onError = (e) => {
+                appendLog(`Error: ${e.message || 'Connection failed'}`, "system");
+                toggleState(false);
+            };
+
+            client.onClose = () => {
+                appendLog("Disconnected", "system");
+                toggleState(false);
+            };
+            
+            // Listen for turn complete from backend if we decided to send it
+            const originalOnmessage = client.websocket?.onmessage;
+            if(client.websocket) {
+                 client.websocket.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === "turn_complete") {
+                        aiMessageBuffer = ""; // Reset buffer
+                        const msg = document.getElementById('current-ai-msg');
+                        if (msg) msg.id = "";
+                    } else if (originalOnmessage) {
+                        originalOnmessage(event);
+                    }
+                }
+            }
+
+
+            try {
+                await client.start(options);
+                appendLog("Connected!", "system");
+                
+                // Add intercept logic for turn_complete
+                const oldOnMessage = client.websocket.onmessage;
+                client.websocket.onmessage = (ev) => {
+                    const d = JSON.parse(ev.data);
+                    if(d.type === 'turn_complete'){
+                        aiMessageBuffer = "";
+                        const m = document.getElementById('current-ai-msg');
+                        if(m) m.id = "";
+                    }
+                    oldOnMessage(ev);
+                }
+
+                toggleState(true);
+            } catch (e) {
+                appendLog("Failed to start media/connection", "system");
+            }
+        }
+
+        function toggleState(connected) {
+            btnConnect.disabled = connected;
+            btnConnectAudio.disabled = connected;
+            btnDisconnect.disabled = !connected;
+            btnSend.disabled = !connected;
+            txtInput.disabled = !connected;
+        }
+
+        btnConnect.onclick = () => initConnection({ audio: true, video: true });
+        btnConnectAudio.onclick = () => initConnection({ audio: true, video: false });
+        
+        btnDisconnect.onclick = () => {
+            if (client) {
+                client.stop();
+                client = null;
+            }
+        };
+
+        function sendMessage() {
+            const txt = txtInput.value.trim();
+            if (txt && client) {
+                client.sendText(txt);
+                appendLog(txt, "user");
+                txtInput.value = "";
+                aiMessageBuffer = ""; // Clear on new message mapping
+            }
+        }
+
+        btnSend.onclick = sendMessage;
+        txtInput.onkeypress = (e) => {
+            if (e.key === 'Enter') sendMessage();
+        };
+
+    </script>
+</body>
+</html>
