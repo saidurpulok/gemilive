@@ -3,7 +3,6 @@ class LiveAIClient {
         this.url = url;
         this.token = options.token || "";
         this.systemPrompt = options.systemPrompt || "";
-        this.greeting = options.greeting || "Hello! Please greet the user naturally based on your role.";
         this.websocket = null;
         this.stream = null;
         this.videoInterval = null;
@@ -37,10 +36,7 @@ class LiveAIClient {
             this.websocket.onopen = async () => {
                 // Send setup message
                 this.websocket.send(JSON.stringify({
-                    setup: {
-                        system_prompt: this.systemPrompt,
-                        greeting: this.greeting
-                    }
+                    setup: { system_prompt: this.systemPrompt }
                 }));
 
                 if (options.audio || options.video) {

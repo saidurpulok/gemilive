@@ -20,7 +20,8 @@ async def receive_from_client(ws: WebSocket, session):
             data = await ws.receive_json()
             
             if "text" in data:
-                print(f"[Client -> Gemini] Sending text: {data['text']}")
+                if settings.debug_mode:
+                    print(f"[Client -> Gemini] text: {data['text']}")
                 await session.send_client_content(
                     turns=types.Content(role="user", parts=[types.Part.from_text(text=data["text"])]),
                     turn_complete=True
@@ -52,20 +53,10 @@ async def receive_from_client(ws: WebSocket, session):
 
 async def receive_from_gemini(ws: WebSocket, session):
     try:
-        print("[Gemini -> Client] Tailing Gemini responses...")
         while True:
-            print("[Gemini -> Client] Waiting for next turn from Gemini...")
             turn = session.receive()
-            print("[Gemini -> Client] Turn started. Receiving contents...")
             async for response in turn:
-                # Full dump of what Gemini actually sends
-                try:
-                    dumped = response.model_dump(exclude_none=True)
-                    print(f"[Gemini Raw] {dumped}")
-                except Exception as de:
-                    print(f"[Gemini Raw] {repr(response)} (dump error: {de})")
-
-                # Ignore session bookkeeping signals — not content
+                # Skip session bookkeeping signals
                 if response.session_resumption_update is not None:
                     continue
 
@@ -149,9 +140,6 @@ async def live_ai_endpoint(websocket: WebSocket, token: str = Query(None)):
             for p in pending:
                 p.cancel()
 
-
-
-                
     except Exception as e:
         if settings.debug_mode:
             print(f"Gemini connection error: {e}")

@@ -105,12 +105,6 @@
                 }
             };
 
-            client.onAudio = () => {
-                 if(!document.getElementById('current-ai-msg')) {
-                     appendLog("🎵 [Playing Audio]", "ai");
-                 }
-            }
-
             client.onError = (e) => {
                 appendLog(`Error: ${e.message || 'Connection failed'}`, "system");
                 toggleState(false);
@@ -120,45 +114,29 @@
                 appendLog("Disconnected", "system");
                 toggleState(false);
             };
-            
-            // Listen for turn complete from backend if we decided to send it
-            const originalOnmessage = client.websocket?.onmessage;
-            if(client.websocket) {
-                 client.websocket.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    if (data.type === "turn_complete") {
-                        aiMessageBuffer = ""; // Reset buffer
-                        const msg = document.getElementById('current-ai-msg');
-                        if (msg) msg.id = "";
-                    } else if (originalOnmessage) {
-                        originalOnmessage(event);
-                    }
-                }
-            }
 
 
             try {
                 await client.start(options);
                 appendLog("Connected!", "system");
 
-                // Show video preview if video mode
+                // Show camera preview in video mode
                 if (options.video && client.stream) {
-                    const preview = document.getElementById('videoPreview');
-                    preview.srcObject = client.stream;
+                    document.getElementById('videoPreview').srcObject = client.stream;
                     document.getElementById('videoPanel').classList.add('active');
                 }
-                
-                // Add intercept logic for turn_complete
-                const oldOnMessage = client.websocket.onmessage;
+
+                // Intercept turn_complete to finalize the AI message bubble
+                const onMessage = client.websocket.onmessage;
                 client.websocket.onmessage = (ev) => {
                     const d = JSON.parse(ev.data);
-                    if(d.type === 'turn_complete'){
+                    if (d.type === 'turn_complete') {
                         aiMessageBuffer = "";
                         const m = document.getElementById('current-ai-msg');
-                        if(m) m.id = "";
+                        if (m) m.id = "";
                     }
-                    oldOnMessage(ev);
-                }
+                    onMessage(ev);
+                };
 
                 toggleState(true);
             } catch (e) {
