@@ -5,7 +5,8 @@ TalkToGemini is a high-performance, real-time voice and text interface built on 
 ## 🚀 Features
 
 - **Bidirectional Voice AI**: Real-time PCM audio streaming (16kHz up / 24kHz down) for natural, fluid conversations.
-- **Multimodal Support**: Support for sending live video frames (JPEG) for visual reasoning.
+- **Multimodal Support**: Send live video frames (JPEG snapshots at 1fps) for visual reasoning — the AI can see what your camera sees.
+- **Camera Preview UI**: Built-in live camera preview with a pulsing `● LIVE` badge so you can confirm what the AI is looking at.
 - **FastAPI Backend**: Robust WebSocket handling with the latest `google-genai` Python SDK.
 - **Lightweight JS SDK**: A dedicated `LiveAIClient` for easy integration into any web project.
 - **Dynamic Configuration**: Easily customizable system prompts, voices, and security tokens.
@@ -51,8 +52,8 @@ cp .env.example .env
 ```
 Key variables:
 - `GOOGLE_API_KEY`: Your Gemini API key.
-- `MODEL_NAME`: Usually `gemini-2.0-flash-exp` or `gemini-3.1-flash-live-preview`.
-- `APP_TOKENS`: A comma-separated list of valid tokens for frontend authentication.
+- `MODEL_NAME`: A Gemini Live-compatible model, e.g. `gemini-2.0-flash-live-preview-04-09`.
+- `AUTHORIZED_APP_TOKENS`: A comma-separated list of valid tokens for frontend authentication.
 
 ### 3. Install Dependencies
 ```bash
@@ -95,10 +96,13 @@ const client = new LiveAIClient("ws://localhost:8000/ws/live", {
 client.onMessage = (text) => console.log("Gemini:", text);
 client.onAudio = (base64) => { /* Raw PCM being played */ };
 
-// Start 
+// Audio only
 await client.start({ audio: true, video: false });
 
-// Stop
+// Video + Audio (camera preview appears automatically in the test UI)
+await client.start({ audio: true, video: true });
+
+// Stop & clean up
 client.stop();
 ```
 

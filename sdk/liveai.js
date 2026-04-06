@@ -103,6 +103,11 @@ class LiveAIClient {
             clearInterval(this.videoInterval);
             this.videoInterval = null;
         }
+        if (this._videoEl) {
+            this._videoEl.srcObject = null;
+            this._videoEl.remove();
+            this._videoEl = null;
+        }
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
@@ -206,27 +211,47 @@ class LiveAIClient {
         const vid = document.createElement("video");
         vid.autoplay = true;
         vid.muted = true;
+        vid.playsInline = true;
         vid.srcObject = videoStream;
+
+        // Browsers require the video element to be in the DOM and playing
+        // to actually decode frames — otherwise canvas captures only black.
+        Object.assign(vid.style, {
+            position: "fixed",
+            top: "-9999px",
+            left: "-9999px",
+            width: "1px",
+            height: "1px",
+            opacity: "0",
+            pointerEvents: "none"
+        });
+        document.body.appendChild(vid);
+        this._videoEl = vid; // keep ref for cleanup
+
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
 
-        vid.onloadedmetadata = () => {
+        const startSampling = () => {
             canvas.width = 640;
-            canvas.height = Math.round((vid.videoHeight / vid.videoWidth) * 640);
+            canvas.height = Math.round((vid.videoHeight / vid.videoWidth) * 640) || 360;
+
+            this.videoInterval = setInterval(() => {
+                if (this.websocket?.readyState === WebSocket.OPEN &&
+                    vid.readyState >= vid.HAVE_CURRENT_DATA) {
+                    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
+                    const data = canvas.toDataURL("image/jpeg", 0.5).split(',')[1];
+                    this.websocket.send(JSON.stringify({
+                        realtimeInput: {
+                            mediaChunks: [{ mimeType: "image/jpeg", data }]
+                        }
+                    }));
+                }
+            }, 1000);
         };
 
-        this.videoInterval = setInterval(() => {
-            if (this.websocket?.readyState === WebSocket.OPEN &&
-                canvas.width > 0 && vid.videoWidth > 0) {
-                ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-                const data = canvas.toDataURL("image/jpeg", 0.5).split(',')[1];
-                this.websocket.send(JSON.stringify({
-                    realtimeInput: {
-                        mediaChunks: [{ mimeType: "image/jpeg", data }]
-                    }
-                }));
-            }
-        }, 1000);
+        // Wait until the video can play before sampling
+        vid.addEventListener("canplay", startSampling, { once: true });
+        vid.play().catch(e => console.warn("[LiveAI] Video play() failed:", e));
     }
 
     /**

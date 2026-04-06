@@ -20,6 +20,13 @@
         .config-panel { background: #fff5e6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffe0b2; }
         .config-panel label { display: block; margin-bottom: 8px; font-weight: bold; }
         .config-panel input { width: 100%; margin-bottom: 15px; box-sizing: border-box; }
+        .video-panel { display: none; margin-bottom: 20px; }
+        .video-panel.active { display: block; }
+        .video-wrapper { position: relative; display: inline-block; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.15); background: #000; }
+        #videoPreview { display: block; width: 100%; max-width: 480px; height: auto; border-radius: 12px; }
+        .live-badge { position: absolute; top: 10px; left: 10px; background: #d32f2f; color: white; font-size: 0.7em; font-weight: bold; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.08em; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .video-label { font-size: 0.8em; color: #666; margin-top: 6px; }
     </style>
 </head>
 <body>
@@ -41,6 +48,14 @@
     <div class="controls">
         <input type="text" id="txtInput" placeholder="Type a message..." style="flex: 1" disabled>
         <button id="btnSend" disabled>Send</button>
+    </div>
+
+    <div class="video-panel" id="videoPanel">
+        <div class="video-wrapper">
+            <video id="videoPreview" autoplay muted playsinline></video>
+            <span class="live-badge">● LIVE</span>
+        </div>
+        <div class="video-label">📷 Camera preview — what the AI sees</div>
     </div>
 
     <div class="log-container" id="log"></div>
@@ -125,6 +140,13 @@
             try {
                 await client.start(options);
                 appendLog("Connected!", "system");
+
+                // Show video preview if video mode
+                if (options.video && client.stream) {
+                    const preview = document.getElementById('videoPreview');
+                    preview.srcObject = client.stream;
+                    document.getElementById('videoPanel').classList.add('active');
+                }
                 
                 // Add intercept logic for turn_complete
                 const oldOnMessage = client.websocket.onmessage;
@@ -160,6 +182,9 @@
                 client.stop();
                 client = null;
             }
+            const preview = document.getElementById('videoPreview');
+            preview.srcObject = null;
+            document.getElementById('videoPanel').classList.remove('active');
         };
 
         function sendMessage() {
