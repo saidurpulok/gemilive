@@ -106,10 +106,14 @@ async def live_ai_endpoint(websocket: WebSocket, token: str = Query(None)):
         setup_msg = await websocket.receive_json()
         setup = setup_msg.get("setup", {})
         system_prompt = setup.get("system_prompt", "")
-        greeting = setup.get("greeting", "Hello! Welcome. How can I help you today?")
 
-        # Always add greeting instruction to system prompt
-        full_system = f"{system_prompt}\n\nIMPORTANT: When you first connect, greet the user immediately and naturally based on your role.".strip() if system_prompt else "Greet the user immediately when you first connect."
+        # Prepend greeting instructions so Gemini warmly greets on the first user message
+        greeting_instruction = (
+            "When the user first speaks (even a single word like 'hello'), "
+            "immediately greet them warmly and naturally as your first response, "
+            "then address what they said. Keep the greeting brief and friendly."
+        )
+        full_system = f"{system_prompt}\n\n{greeting_instruction}".strip() if system_prompt else greeting_instruction
 
         config = types.LiveConnectConfig(
             system_instruction=types.Content(parts=[types.Part.from_text(text=full_system)]),
@@ -135,8 +139,6 @@ async def live_ai_endpoint(websocket: WebSocket, token: str = Query(None)):
         async with client.aio.live.connect(model=model_name, config=config) as session:
             print("[WS] Gemini Connected! Starting bidirectional audio streaming.")
 
-            # Start bidirectional streaming immediately
-            # The system prompt instructs Gemini to greet on first input
             client_task = asyncio.create_task(receive_from_client(websocket, session))
             gemini_task = asyncio.create_task(receive_from_gemini(websocket, session))
 
