@@ -17,6 +17,7 @@
         button { background: #1976d2; color: white; border: none; cursor: pointer; }
         button:disabled { background: #ccc; cursor: not-allowed; }
         button.stop { background: #d32f2f; }
+        button.cam-off { background: #555; }
         .config-panel { background: #fff5e6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffe0b2; }
         .config-panel label { display: block; margin-bottom: 8px; font-weight: bold; }
         .config-panel input { width: 100%; margin-bottom: 15px; box-sizing: border-box; }
@@ -40,9 +41,9 @@
     </div>
 
     <div class="controls">
-        <button id="btnConnect">Connect Video+Audio</button>
-        <button id="btnConnectAudio">Connect Audio Only</button>
+        <button id="btnConnect">Connect</button>
         <button id="btnDisconnect" class="stop" disabled>Disconnect</button>
+        <button id="btnToggleCamera" disabled>📷 Camera: ON</button>
     </div>
 
     <div class="controls">
@@ -63,10 +64,11 @@
     <script>
         let client = null;
         let aiMessageBuffer = "";
+        let videoEnabled = true;
         const logPanel = document.getElementById('log');
         const btnConnect = document.getElementById('btnConnect');
-        const btnConnectAudio = document.getElementById('btnConnectAudio');
         const btnDisconnect = document.getElementById('btnDisconnect');
+        const btnToggleCamera = document.getElementById('btnToggleCamera');
         const btnSend = document.getElementById('btnSend');
         const txtInput = document.getElementById('txtInput');
 
@@ -78,7 +80,7 @@
             logPanel.scrollTop = logPanel.scrollHeight;
         }
 
-        async function initConnection(options) {
+        async function initConnection() {
             const token = document.getElementById('token').value;
             const systemPrompt = document.getElementById('systemPrompt').value;
             
@@ -117,14 +119,12 @@
 
 
             try {
-                await client.start(options);
+                await client.start();
                 appendLog("Connected!", "system");
 
-                // Show camera preview in video mode
-                if (options.video && client.stream) {
-                    document.getElementById('videoPreview').srcObject = client.stream;
-                    document.getElementById('videoPanel').classList.add('active');
-                }
+                // Show camera preview
+                document.getElementById('videoPreview').srcObject = client.stream;
+                document.getElementById('videoPanel').classList.add('active');
 
                 // Intercept turn_complete to finalize the AI message bubble
                 const onMessage = client.websocket.onmessage;
@@ -146,23 +146,37 @@
 
         function toggleState(connected) {
             btnConnect.disabled = connected;
-            btnConnectAudio.disabled = connected;
             btnDisconnect.disabled = !connected;
+            btnToggleCamera.disabled = !connected;
             btnSend.disabled = !connected;
             txtInput.disabled = !connected;
+            if (!connected) {
+                // Reset camera toggle state on disconnect
+                videoEnabled = true;
+                btnToggleCamera.textContent = "📷 Camera: ON";
+                btnToggleCamera.classList.remove('cam-off');
+            }
         }
 
-        btnConnect.onclick = () => initConnection({ audio: true, video: true });
-        btnConnectAudio.onclick = () => initConnection({ audio: true, video: false });
+        btnConnect.onclick = () => initConnection();
+
+        btnToggleCamera.onclick = () => {
+            if (!client) return;
+            videoEnabled = !videoEnabled;
+            client.toggleVideo(videoEnabled);
+            btnToggleCamera.textContent = videoEnabled ? "📷 Camera: ON" : "📷 Camera: OFF";
+            btnToggleCamera.classList.toggle('cam-off', !videoEnabled);
+            document.getElementById('videoPanel').classList.toggle('active', videoEnabled);
+        };
         
         btnDisconnect.onclick = () => {
             if (client) {
                 client.stop();
                 client = null;
             }
-            const preview = document.getElementById('videoPreview');
-            preview.srcObject = null;
+            document.getElementById('videoPreview').srcObject = null;
             document.getElementById('videoPanel').classList.remove('active');
+            toggleState(false);
         };
 
         function sendMessage() {

@@ -6,6 +6,9 @@ class LiveAIClient {
         this.websocket = null;
         this.stream = null;
         this.videoInterval = null;
+        this._videoEl = null;
+        this._videoCanvas = null;
+        this._videoCtx = null;
 
         // Audio recording nodes (cleaned up on stop)
         this.audioContext = null;
@@ -24,7 +27,7 @@ class LiveAIClient {
         this.onClose = null;
     }
 
-    async start(options = { audio: true, video: false }) {
+    async start() {
         return new Promise((resolve, reject) => {
             let wsUrl = this.url;
             if (this.token) {
@@ -34,33 +37,23 @@ class LiveAIClient {
             this.websocket = new WebSocket(wsUrl);
 
             this.websocket.onopen = async () => {
-                // Send setup message
                 this.websocket.send(JSON.stringify({
                     setup: { system_prompt: this.systemPrompt }
                 }));
 
-                if (options.audio || options.video) {
-                    try {
-                        const stream = await navigator.mediaDevices.getUserMedia(options);
-                        this.stream = stream;
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+                    this.stream = stream;
 
-                        if (options.audio && stream.getAudioTracks().length > 0) {
-                            const audioStream = new MediaStream(stream.getAudioTracks());
-                            this._startAudioRecording(audioStream);
-                        }
+                    const audioStream = new MediaStream(stream.getAudioTracks());
+                    this._startAudioRecording(audioStream);
+                    this._setupVideoCapture(stream);
 
-                        if (options.video && stream.getVideoTracks().length > 0) {
-                            this._startVideoSampling(stream);
-                        }
-
-                        resolve();
-                    } catch (e) {
-                        this.websocket.close();
-                        if (this.onError) this.onError(e);
-                        reject(e);
-                    }
-                } else {
                     resolve();
+                } catch (e) {
+                    this.websocket.close();
+                    if (this.onError) this.onError(e);
+                    reject(e);
                 }
             };
 
@@ -93,17 +86,25 @@ class LiveAIClient {
         }
     }
 
+    /** Enable or disable video frame sending mid-session. */
+    toggleVideo(enabled) {
+        if (enabled) {
+            this._startVideoInterval();
+        } else {
+            this._stopVideoInterval();
+        }
+    }
+
     stop() {
         this._cleanupAudio();
-        if (this.videoInterval) {
-            clearInterval(this.videoInterval);
-            this.videoInterval = null;
-        }
+        this._stopVideoInterval();
         if (this._videoEl) {
             this._videoEl.srcObject = null;
             this._videoEl.remove();
             this._videoEl = null;
         }
+        this._videoCanvas = null;
+        this._videoCtx = null;
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
@@ -203,7 +204,7 @@ class LiveAIClient {
         this.muteNode.connect(this.audioContext.destination);
     }
 
-    _startVideoSampling(videoStream) {
+    _setupVideoCapture(videoStream) {
         const vid = document.createElement("video");
         vid.autoplay = true;
         vid.muted = true;
@@ -222,32 +223,42 @@ class LiveAIClient {
             pointerEvents: "none"
         });
         document.body.appendChild(vid);
-        this._videoEl = vid; // keep ref for cleanup
+        this._videoEl = vid;
 
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+        this._videoCanvas = document.createElement("canvas");
+        this._videoCtx = this._videoCanvas.getContext("2d");
 
-        const startSampling = () => {
-            canvas.width = 640;
-            canvas.height = Math.round((vid.videoHeight / vid.videoWidth) * 640) || 360;
+        vid.addEventListener("canplay", () => {
+            this._videoCanvas.width = 640;
+            this._videoCanvas.height = Math.round((vid.videoHeight / vid.videoWidth) * 640) || 360;
+            this._startVideoInterval();
+        }, { once: true });
 
-            this.videoInterval = setInterval(() => {
-                if (this.websocket?.readyState === WebSocket.OPEN &&
-                    vid.readyState >= vid.HAVE_CURRENT_DATA) {
-                    ctx.drawImage(vid, 0, 0, canvas.width, canvas.height);
-                    const data = canvas.toDataURL("image/jpeg", 0.5).split(',')[1];
-                    this.websocket.send(JSON.stringify({
-                        realtimeInput: {
-                            mediaChunks: [{ mimeType: "image/jpeg", data }]
-                        }
-                    }));
-                }
-            }, 1000);
-        };
-
-        // Wait until the video can play before sampling
-        vid.addEventListener("canplay", startSampling, { once: true });
         vid.play().catch(e => console.warn("[LiveAI] Video play() failed:", e));
+    }
+
+    _startVideoInterval() {
+        // Avoid double-starting
+        if (this.videoInterval) return;
+        this.videoInterval = setInterval(() => {
+            if (this.websocket?.readyState === WebSocket.OPEN &&
+                this._videoEl?.readyState >= this._videoEl?.HAVE_CURRENT_DATA) {
+                this._videoCtx.drawImage(this._videoEl, 0, 0, this._videoCanvas.width, this._videoCanvas.height);
+                const data = this._videoCanvas.toDataURL("image/jpeg", 0.5).split(',')[1];
+                this.websocket.send(JSON.stringify({
+                    realtimeInput: {
+                        mediaChunks: [{ mimeType: "image/jpeg", data }]
+                    }
+                }));
+            }
+        }, 1000);
+    }
+
+    _stopVideoInterval() {
+        if (this.videoInterval) {
+            clearInterval(this.videoInterval);
+            this.videoInterval = null;
+        }
     }
 
     /**
