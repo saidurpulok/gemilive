@@ -1,0 +1,32 @@
+name: Publish gemilive-js to npm
+
+on:
+  push:
+    tags:
+      - "js-v*"   # trigger: git tag js-v0.1.0 && git push origin js-v0.1.0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        working-directory: gemilive-js
+        run: npm install
+
+      - name: Build minified bundle
+        working-directory: gemilive-js
+        run: npm run build
+
+      - name: Publish to npm
+        working-directory: gemilive-js
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

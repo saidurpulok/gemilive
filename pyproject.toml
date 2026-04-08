@@ -1,9 +1,11 @@
 [project]
-name = "central-liveai"
+name = "gemilive"
 version = "0.1.0"
-description = "Add your description here"
+description = "Minimal Gemini Live AI WebSocket proxy for FastAPI — plug and play voice + video AI."
 readme = "README.md"
 requires-python = ">=3.14"
+license = "MIT"
+keywords = ["gemini", "live", "ai", "voice", "video", "fastapi", "websocket"]
 dependencies = [
     "fastapi[standard]>=0.115.0",
     "google-genai>=1.70.0",
@@ -11,3 +13,6 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "websockets>=16.0",
 ]
+
+[tool.setuptools.packages.find]
+include = ["gemilive*"]

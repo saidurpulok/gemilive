@@ -1,24 +1,14 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from api.live_routes import router as live_router
+from gemilive import mount_gemilive
 
-app = FastAPI(title="Google Live AI Wrapper")
+app = FastAPI(title="gemilive — Dev Demo")
 
-# CORS for frontend access
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # For production, restrict this
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Two lines to add Gemini Live AI to any FastAPI app
+mount_gemilive(app)
 
-# Register WebSockets router
-app.include_router(live_router)
-
-# Mount static files for testing UI
-app.mount("/sdk", StaticFiles(directory="sdk"), name="sdk")
+# Serve the dev demo UI (not part of the published package)
+app.mount("/gemilive-js", StaticFiles(directory="gemilive-js/src"), name="gemilive-js")
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":

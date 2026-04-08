@@ -1,121 +1,130 @@
-# TalkToGemini
+# gemilive
 
-TalkToGemini is a high-performance, real-time voice and text interface built on top of the **Google Gemini Live API (Multimodal Live)**. It provides a seamless bridge between a web-based frontend and Gemini's multimodal capabilities, featuring low-latency bidirectional audio streaming and live video frame analysis.
+Plug-and-play **Gemini Live AI** (voice + video) for your FastAPI app.
+
+`gemilive` provides a seamless bridge between a web-based frontend and Google's Gemini Multimodal Live API. It handles the heavy lifting of WebSockets, bidirectional audio streams (16kHz up / 24kHz down), gapless browser PCM playback, and live video framing — allowing you to add conversational AI to your project in just **six lines of code**.
+
+This repo contains both the Python backend plugin (`gemilive`) and the companion JavaScript client (`gemilive-js`).
 
 ## 🚀 Features
 
-- **Bidirectional Voice AI**: Real-time PCM audio streaming (16kHz up / 24kHz down) for natural, fluid conversations.
-- **Multimodal Support**: Send live video frames (JPEG snapshots at 1fps) for visual reasoning — the AI can see what your camera sees.
-- **Camera Preview UI**: Built-in live camera preview with a pulsing `● LIVE` badge so you can confirm what the AI is looking at.
-- **FastAPI Backend**: Robust WebSocket handling with the latest `google-genai` Python SDK.
-- **Lightweight JS SDK**: A dedicated `LiveAIClient` for easy integration into any web project.
-- **Dynamic Configuration**: Easily customizable system prompts, voices, and security tokens.
-- **Automatic Resampling**: Frontend SDK handles native browser sample rate conversion to Gemini-compatible PCM.
-
-## 🛠️ Tech Stack
-
-- **Backend**: Python 3.14+, [FastAPI](https://fastapi.tiangolo.com/), [google-genai](https://github.com/googleapis/python-genai)
-- **Frontend**: Vanilla JavaScript (Web Audio API, WebSockets)
-- **Package Management**: [uv](https://github.com/astral-sh/uv)
+- **Bidirectional Voice AI**: Real-time PCM audio streaming for natural, fluid conversions. No laggy turn-by-turn.
+- **Multimodal Vision**: The AI can see what your camera sees via 1fps JPEG snapshots.
+- **Zero-Boilerplate Backend**: Just wrap your existing FastAPI app with `mount_gemilive()`.
+- **Lightweight JS SDK**: A clean browser `GemiliveClient` handling media capture and resampling.
+- **Toggleable Media**: Turn your camera off/on mid-session seamlessly.
 
 ---
 
-## 📂 Project Structure
+## 🛠️ Installation & Quickstart
+
+Integration requires two pieces: the Python server endpoint and the JavaScript browser client.
+
+### Backend (Python)
+
+Install the pip package:
+```bash
+uv add gemilive
+# or pip install gemilive
+```
+
+Setup requires an API key. You can provide it in code or grab it from your `.env`:
+```env
+GOOGLE_API_KEY=your_gemini_api_key_here
+MODEL_NAME=gemini-3.1-flash-live-preview
+```
+
+Mount it into any FastAPI app:
+```python
+from fastapi import FastAPI
+from gemilive import mount_gemilive
+
+app = FastAPI()
+
+# Mounts the WebSocket route at /ws/live
+mount_gemilive(app, system_prompt="You are a helpful assistant. Keep answers brief.")
+```
+
+### Frontend (JavaScript)
+
+Install the npm package:
+```bash
+npm install gemilive-js
+```
+*Or use via CDN in plain HTML:*
+```html
+<script src="https://cdn.jsdelivr.net/npm/gemilive-js/dist/gemilive.min.js"></script>
+```
+
+Initialize the client, connect, and start talking:
+```javascript
+import { GemiliveClient } from 'gemilive-js';
+
+// Point it to your FastAPI server's mount path
+const client = new GemiliveClient("ws://localhost:8000/ws/live");
+
+client.onMessage = (text) => console.log("Gemini:", text);
+client.onError = (err) => console.error("Error:", err);
+
+// Start the connection (prompts user for Mic & Camera)
+await client.start();
+
+// Disable video mid-session (audio continues)
+// client.toggleVideo(false);
+
+// Stop and disconnect
+// client.stop();
+```
+
+---
+
+## ⚙️ Advanced Configuration
+
+### Python `mount_gemilive()` Overrides
+You can override environment variables dynamically when mounting the API:
+
+```python
+mount_gemilive(
+    app,
+    google_api_key="...",                 # Overrides GOOGLE_API_KEY env 
+    model="gemini-3.1-flash-live-preview",# Overrides MODEL_NAME env
+    voice="Aoede",                        # Optional Gemini Voice ("Aoede", "Charon", etc.)
+    allow_origins=["https://myapp.com"],  # Essential if your frontend is on a different domain
+    debug_mode=True                       # Console logging of message flow
+)
+```
+
+### The System Prompt
+You can set system prompts on the **server-side** (via `mount_gemilive`) or the **client-side** (via `new GemiliveClient(url, { systemPrompt: "..." })`). 
+If both are provided, the server-side prompt takes precedence, and the client-side prompt is appended securely as "Additional context".
+
+---
+
+## 📂 Project Structure (For Contributors)
+
+`gemilive` is developed as a monorepo containing two packages:
 
 ```text
-├── main.py              # FastAPI application entry point
-├── api/
-│   └── live_routes.py   # WebSocket endpoint and Gemini Live logic
-├── core/
-│   └── config.py        # Pydantic-based configuration management
-├── sdk/
-│   └── liveai.js        # Frontend JavaScript SDK (The Core Client)
-├── static/
-│   └── index.html       # Prototype UI for testing
-├── .env.example         # Template for environment variables
-└── pyproject.toml       # Backend dependencies
+├── gemilive/             # PyPI package source
+│   ├── mount.py        # Public FastAPI installer
+│   ├── config.py       # Pydantic env validation
+│   └── router.py       # Internal WebSocket / GenAI flow
+├── gemilive-js/          # npm package source
+│   ├── src/index.js    # Browser SDK (Web Audio API logic)
+│   └── package.json
+└── main.py             # Sandbox FastAPI app for testing and local dev
 ```
 
----
-
-## ⚙️ Setup & Installation
-
-### 1. Prerequisites
-- **Python 3.14+** (Recommended)
-- **uv** (Python package manager)
-- A **Google Gemini API Key** (from [Google AI Studio](https://aistudio.google.com/))
-
-### 2. Environment Configuration
-Copy the template and fill in your credentials:
-```bash
-cp .env.example .env
-```
-Key variables:
-- `GOOGLE_API_KEY`: Your Gemini API key.
-- `MODEL_NAME`: A Gemini Live-compatible model, e.g. `gemini-2.0-flash-live-preview-04-09`.
-- `AUTHORIZED_APP_TOKENS`: A comma-separated list of valid tokens for frontend authentication.
-
-### 3. Install Dependencies
-```bash
-uv sync
-```
-
-### 4. Run the Server
-```bash
-uv run fastapi dev main.py
-```
-The server will start at `http://localhost:8000`.
-
----
-
-## 📖 Developer Guide
-
-### Backend: WebSocket Endpoint
-The main interaction happens over a WebSocket at `/ws/live`.
-- **Protocol**: JSON-wrapped messages.
-- **Setup Message**: Must send a `setup` object first to initialize the Gemini session.
-  ```json
-  {
-    "setup": {
-        "system_prompt": "You are a helpful AI assistant.",
-        "greeting": "Optional initial text trigger"
-    }
-  }
-  ```
-
-### Frontend: Using the SDK
-The `LiveAIClient` handles the heavy lifting of Web Audio and WebSockets.
-
-```javascript
-const client = new LiveAIClient("ws://localhost:8000/ws/live", {
-    token: "your_app_token",
-    systemPrompt: "You are a helpful assistant."
-});
-
-// Callbacks
-client.onMessage = (text) => console.log("Gemini:", text);
-client.onAudio = (base64) => { /* Raw PCM being played */ };
-
-// Audio only
-await client.start({ audio: true, video: false });
-
-// Video + Audio (camera preview appears automatically in the test UI)
-await client.start({ audio: true, video: true });
-
-// Stop & clean up
-client.stop();
-```
+For guidelines on local development and how to publish to PyPI and npm, read `PUBLISHING.md`.
 
 ---
 
 ## ⚠️ Important Considerations
 
-1. **Browser Security**: `getUserMedia` (Mic/Camera) requires **HTTPS** in production. Localhost works for development.
-2. **Audio Resampling**: The SDK resamples browser audio (typically 48kHz) down to **16kHz PCM** as required by Gemini.
-3. **Session Management**: Each WebSocket connection creates a fresh Gemini Live session.
-4. **Resumption**: The API currently provides session resumption handles in logs, though the SDK currently restarts sessions on reconnect for simplicity.
+1. **Browser Security**: Browsers restrict microphone/camera access to secure contexts. `getUserMedia` requires **HTTPS** in production. `localhost` works for development.
+2. **Audio Resampling**: Browsers typically record audio at 44.1kHz or 48kHz. The `gemilive-js` SDK seamlessly resamples microphone inputs to **16kHz PCM** to meet Gemini's strict API requirements. Responses from Gemini are returned as 24kHz PCM and gaplessly played back using Javascript time-scheduling.
 
 ---
 
 ## 📄 License
-This project is for internal use and experimental development.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

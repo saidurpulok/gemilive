@@ -38,3 +38,5 @@ htmlcov/
 .nox/
 .ruff_cache/
 .mypy_cache/
+
+PUBLISHING.md

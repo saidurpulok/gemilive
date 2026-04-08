@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Live AI Wrapper Test</title>
-    <script src="/sdk/liveai.js"></script>
+    <script type="module" src="/gemilive-js/index.js"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -87,7 +87,7 @@
             // Assuming serving from the same host
             const wsUrl = `ws://${window.location.host}/ws/live`;
             
-            client = new LiveAIClient(wsUrl, { token, systemPrompt });
+            client = new GemiliveClient(wsUrl, { token, systemPrompt });
             
             appendLog("Connecting...", "system");
             

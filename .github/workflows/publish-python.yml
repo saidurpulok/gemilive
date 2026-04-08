@@ -1,0 +1,28 @@
+name: Publish gemilive to PyPI
+
+on:
+  push:
+    tags:
+      - "python-v*"   # trigger: git tag python-v0.1.0 && git push origin python-v0.1.0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # required for trusted publishing (no token secret needed)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.14"
+
+      - name: Build
+        run: uv build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Uses OIDC trusted publishing — no PYPI_API_TOKEN secret needed.
+        # Set up at: https://pypi.org/manage/account/publishing/
