@@ -1,6 +1,6 @@
 {
   "name": "gemilive-js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Browser SDK for the gemilive Gemini Live AI proxy — real-time voice & video with minimal setup.",
   "main": "src/index.js",
   "module": "src/index.js",
@@ -20,7 +20,15 @@
     "build": "npx esbuild src/index.js --bundle --minify --format=iife --global-name=GemiliveClient --outfile=dist/gemilive.min.js",
     "dev": "npx esbuild src/index.js --bundle --format=iife --global-name=GemiliveClient --outfile=dist/gemilive.js --watch"
   },
-  "keywords": ["gemini", "live", "ai", "voice", "video", "websocket", "realtime"],
+  "keywords": [
+    "gemini",
+    "live",
+    "ai",
+    "voice",
+    "video",
+    "websocket",
+    "realtime"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/saidurpulok/gemilive.git"
