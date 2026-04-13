@@ -1,6 +1,6 @@
 [project]
 name = "gemilive"
-version = "0.1.0"
+version = "0.1.1"
 description = "Minimal Gemini Live AI WebSocket proxy for FastAPI — plug and play voice + video AI."
 readme = "README.md"
 requires-python = ">=3.14"

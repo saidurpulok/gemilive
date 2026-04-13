@@ -1,48 +1,57 @@
-# gemilive
+# gemilive 🎙️🚀
 
-Plug-and-play **Gemini Live AI** (voice + video) for your FastAPI app.
+[![PyPI version](https://badge.fury.io/py/gemilive.svg)](https://badge.fury.io/py/gemilive)
+[![npm version](https://badge.fury.io/js/gemilive-js.svg)](https://badge.fury.io/js/gemilive-js)
 
-`gemilive` provides a seamless bridge between a web-based frontend and Google's Gemini Multimodal Live API. It handles the heavy lifting of WebSockets, bidirectional audio streams (16kHz up / 24kHz down), gapless browser PCM playback, and live video framing — allowing you to add conversational AI to your project in just **six lines of code**.
+**Plug-and-play Gemini Multimodal Live AI (voice + video) for your custom stack.**
 
-This repo contains both the Python backend plugin (`gemilive`) and the companion JavaScript client (`gemilive-js`).
+While Google provides excellent core SDKs for the Gemini Multimodal Live API, integrating it securely into a production app usually kills a weekend. You can't put your API keys directly into a browser frontend, so you are forced to build a custom backend proxy. Suddenly, you're hand-wiring WebSockets to bridge raw 16kHz microphone streams from a JS frontend into a Python backend just to forward them to Gemini.
 
-## 🚀 Features
+**`gemilive` permanently solves this "Proxy Problem."** 
 
-- **Bidirectional Voice AI**: Real-time PCM audio streaming for natural, fluid conversions. No laggy turn-by-turn.
-- **Multimodal Vision**: The AI can see what your camera sees via 1fps JPEG snapshots.
-- **Zero-Boilerplate Backend**: Just wrap your existing FastAPI app with `mount_gemilive()`.
-- **Lightweight JS SDK**: A clean browser `GemiliveClient` handling media capture and resampling.
-- **Toggleable Media**: Turn your camera off/on mid-session seamlessly.
+It provides a seamless, secure bridge connecting your frontend directly to Google's AI through your own custom backend. It abstracts away all the tedious boilerplate of WebSockets, bidirectional audio streams (16kHz up / 24kHz down), gapless browser PCM playback, and live video framing.
+
+Instead of spending hours reading Web Audio specs, you can now add secure, multimodal conversational AI to your project in just **six lines of code**.
+
+This repository contains the full ecosystem spanning two packages:
+- 🐍 **`gemilive`**: The secure Python backend extension for FastAPI.
+- 🌐 **`gemilive-js`**: The companion JavaScript client that handles all browser multimedia.
+
+## ✨ Why gemilive?
+
+- **Real-Time Voice**: Native PCM audio streaming for natural, interruption-friendly conversations. No laggy turn-by-turn.
+- **Multimodal Vision**: The AI can securely see what your camera sees via optimized JPEG snapshots (1fps).
+- **Zero-Boilerplate Backend**: Just wrap your existing FastAPI app with `mount_gemilive()`. It abstracts all the WebSocket proxying securely.
+- **Lightweight JS SDK**: A clean browser `GemiliveClient` handling media permissions, capturing, scaling, and gapless audio resampling so you never have to touch the Web Audio API.
 
 ---
 
 ## 🛠️ Installation & Quickstart
 
-Integration requires two pieces: the Python server endpoint and the JavaScript browser client.
+Integration requires two pieces: the Python server endpoint and the JavaScript browser client. They are designed to work together flawlessly.
 
-### Backend (Python)
+### 🐍 Backend (Python / FastAPI)
 
-Install the pip package:
+Install the pip package. You can use standard `pip` or modern package managers like `uv`:
 ```bash
 uv add gemilive
-# or pip install gemilive
 ```
 
-Setup requires an API key. You can provide it in code or grab it from your `.env`:
+Setup requires a Google Gemini API key. You can provide it directly in code or grab it from your `.env`:
 ```env
 GOOGLE_API_KEY=your_gemini_api_key_here
 MODEL_NAME=gemini-3.1-flash-live-preview
 ```
 
-Mount it into any FastAPI app:
+Mount it into any FastAPI application:
 ```python
 from fastapi import FastAPI
 from gemilive import mount_gemilive
 
 app = FastAPI()
 
-# Mounts the WebSocket route at /ws/live
-mount_gemilive(app, system_prompt="You are a helpful assistant. Keep answers brief.")
+# Mounts the secure WebSocket proxy route automatically at /ws/live
+mount_gemilive(app, system_prompt="You are a helpful assistant. Keep your answers brief and conversational.")
 ```
 
 ### Frontend (JavaScript)
