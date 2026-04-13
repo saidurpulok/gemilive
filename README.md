@@ -1,6 +1,6 @@
 <div align="center">
 
-# gemilive
+# Gemilive
 
 [![PyPI version](https://badge.fury.io/py/gemilive.svg)](https://badge.fury.io/py/gemilive)
 [![npm version](https://badge.fury.io/js/gemilive-js.svg)](https://badge.fury.io/js/gemilive-js)
@@ -23,7 +23,7 @@ sequenceDiagram
 
 While Google provides excellent core SDKs for the Gemini Multimodal Live API, integrating it securely into a production app usually kills a weekend. You can't put your API keys directly into a browser frontend, so you are forced to build a custom backend proxy. Suddenly, you're hand-wiring WebSockets to bridge raw 16kHz microphone streams from a JS frontend into a Python backend just to forward them to Gemini.
 
-**`gemilive` permanently solves this "Proxy Problem."** 
+**`Gemilive` permanently solves this "Proxy Problem."** 
 
 It provides a seamless, secure bridge connecting your frontend directly to Google's AI through your own custom backend. It abstracts away all the tedious boilerplate of WebSockets, bidirectional audio streams (16kHz up / 24kHz down), gapless browser PCM playback, and live video framing.
 
@@ -33,7 +33,7 @@ This repository contains the full ecosystem spanning two packages:
 - **`gemilive`**: The secure Python backend extension for FastAPI.
 - **`gemilive-js`**: The companion JavaScript client that handles all browser multimedia.
 
-## Why gemilive?
+## Why Gemilive?
 
 - **Real-Time Voice**: Native PCM audio streaming for natural, interruption-friendly conversations. No laggy turn-by-turn.
 - **Multimodal Vision**: The AI can securely see what your camera sees via optimized JPEG snapshots (1fps).
