@@ -1,5 +1,7 @@
 # gemilive-js
 
+[![npm version](https://badge.fury.io/js/gemilive-js.svg)](https://badge.fury.io/js/gemilive-js)
+
 **IMPORTANT: This is the companion Frontend SDK for the Python [`gemilive`](https://github.com/saidurpulok/gemilive) FastAPI package. It must be connected to a backend running `gemilive`.**
 
 `gemilive-js` handles the complex browser APIs required for real-time AI streaming so you don't have to. It manages native WebSockets, microphone capture, audio resampling, video frame sampling, and timeline-based gapless PCM playback. 
