@@ -1,7 +1,23 @@
-# gemilive 🎙️🚀
+<div align="center">
+
+# gemilive
 
 [![PyPI version](https://badge.fury.io/py/gemilive.svg)](https://badge.fury.io/py/gemilive)
 [![npm version](https://badge.fury.io/js/gemilive-js.svg)](https://badge.fury.io/js/gemilive-js)
+
+</div>
+
+```mermaid
+sequenceDiagram
+    participant Browser as Browser (gemilive-js)
+    participant FastAPI as Backend (FastAPI gemilive)
+    participant Gemini as Google Gemini AI
+
+    Browser->>FastAPI: WebSocket (16kHz PCM Audio + Video Frames)
+    FastAPI->>Gemini: Secure API Stream
+    Gemini-->>FastAPI: AI Multimodal Response (24kHz PCM)
+    FastAPI-->>Browser: Gapless Audio Playback
+```
 
 **Plug-and-play Gemini Multimodal Live AI (voice + video) for your custom stack.**
 
@@ -14,10 +30,10 @@ It provides a seamless, secure bridge connecting your frontend directly to Googl
 Instead of spending hours reading Web Audio specs, you can now add secure, multimodal conversational AI to your project in just **six lines of code**.
 
 This repository contains the full ecosystem spanning two packages:
-- 🐍 **`gemilive`**: The secure Python backend extension for FastAPI.
-- 🌐 **`gemilive-js`**: The companion JavaScript client that handles all browser multimedia.
+- **`gemilive`**: The secure Python backend extension for FastAPI.
+- **`gemilive-js`**: The companion JavaScript client that handles all browser multimedia.
 
-## ✨ Why gemilive?
+## Why gemilive?
 
 - **Real-Time Voice**: Native PCM audio streaming for natural, interruption-friendly conversations. No laggy turn-by-turn.
 - **Multimodal Vision**: The AI can securely see what your camera sees via optimized JPEG snapshots (1fps).
@@ -26,11 +42,11 @@ This repository contains the full ecosystem spanning two packages:
 
 ---
 
-## 🛠️ Installation & Quickstart
+## Installation & Quickstart
 
 Integration requires two pieces: the Python server endpoint and the JavaScript browser client. They are designed to work together flawlessly.
 
-### 🐍 Backend (Python / FastAPI)
+### Backend (Python / FastAPI)
 
 Install the pip package. You can use standard `pip` or modern package managers like `uv`:
 ```bash
@@ -132,6 +148,17 @@ For guidelines on local development and how to publish to PyPI and npm, read `PU
 
 1. **Browser Security**: Browsers restrict microphone/camera access to secure contexts. `getUserMedia` requires **HTTPS** in production. `localhost` works for development.
 2. **Audio Resampling**: Browsers typically record audio at 44.1kHz or 48kHz. The `gemilive-js` SDK seamlessly resamples microphone inputs to **16kHz PCM** to meet Gemini's strict API requirements. Responses from Gemini are returned as 24kHz PCM and gaplessly played back using Javascript time-scheduling.
+
+---
+
+## 🤝 Contributing & Feedback
+
+This is an early release (`v0.1.x`) and I am actively looking for feedback! Real-time streaming architectures are complex, and browser media APIs can be famously finicky. 
+
+If you encounter any bugs, have optimization ideas for Web Audio/WebSockets, or simply want to suggest a new feature:
+
+- Please [open an issue](https://github.com/saidurpulok/gemilive/issues) to start a discussion.
+- Pull Requests are entirely welcome and highly appreciated!
 
 ---
 

@@ -17,6 +17,7 @@ __pycache__/
 dist/
 build/
 wheels/
+node_modules/
 
 # IDEs and OS
 .idea/
@@ -39,4 +40,6 @@ htmlcov/
 .ruff_cache/
 .mypy_cache/
 
+# misc
 PUBLISHING.md
+package-lock.json
