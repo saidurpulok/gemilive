@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemilive: Python & JS Realtime Gemini Live AI Bridge</title>
+    <meta name="description"
+        content="Plug-and-play Gemini Multimodal Live AI (voice + video) for your custom FastAPI stack via WebSockets and WebAudio.">
+
+    <!-- Google Fonts: Outfit for display, Inter for body, Fira Code for code blocks -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="glow-blob blob-1"></div>
+    <div class="glow-blob blob-2"></div>
+
+    <main>
+        <header class="hero">
+            <div class="badge-container">
+                <a href="https://pypi.org/project/gemilive/" target="_blank" rel="noopener" class="badge">
+                    <span class="badge-icon">🐍</span> PyPI
+                </a>
+                <a href="https://www.npmjs.com/package/gemilive-js" target="_blank" rel="noopener" class="badge">
+                    <span class="badge-icon">📦</span> NPM
+                </a>
+            </div>
+
+            <h1 class="logo">Gemilive</h1>
+            <p class="tagline">
+                Plug-and-play <span class="text-gradient">Gemini Multimodal Live</span><br /> for your custom stack.
+            </p>
+
+            <p class="description">
+                Abstracts away the brutal boilerplate of bridging native browser WebAudio, gapless PCM streaming, and
+                live video frames to a secure Python backend proxy. Build conversational intelligence in <strong>six
+                    lines of code</strong>.
+            </p>
+
+            <div class="cta-group">
+                <a href="https://github.com/saidurpulok/gemilive" class="btn btn-primary" target="_blank"
+                    rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                        <path
+                            d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.6.113.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.814 1.102.814 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+                    </svg>
+                    View on GitHub
+                </a>
+            </div>
+        </header>
+
+        <section class="problem-section glass-panel">
+            <h2>The "Proxy Problem"</h2>
+            <p>
+                While Google provides excellent core SDKs for the Gemini Multimodal Live API, integrating it securely
+                into a production app usually <strong>kills a weekend</strong>. You can't put your API keys directly
+                into a browser frontend, so you are forced to build a custom backend proxy. Suddenly, you're hand-wiring
+                WebSockets to bridge raw 16kHz microphone streams from a JS frontend into a Python backend just to
+                forward them to Gemini.
+            </p>
+            <p>
+                <strong>Gemilive effortlessly bridges that gap permanently.</strong>
+            </p>
+        </section>
+
+        <!-- Custom Architectural Diagram -->
+        <div class="architecture-diagram glass-panel">
+            <div class="arch-node">
+                <div class="node-icon">🌐</div>
+                <div class="node-content">
+                    <h4>Browser Frontend</h4>
+                    <span>gemilive-js</span>
+                </div>
+            </div>
+
+            <div class="arch-connector">
+                <div class="connector-line animated-line"></div>
+                <span class="connector-label">WebSockets ↔</span>
+            </div>
+
+            <div class="arch-node proxy-node">
+                <div class="node-icon">🐍</div>
+                <div class="node-content">
+                    <h4>FastAPI Proxy</h4>
+                    <span>gemilive</span>
+                </div>
+            </div>
+
+            <div class="arch-connector">
+                <div class="connector-line animated-line"></div>
+                <span class="connector-label">API Stream ↔</span>
+            </div>
+
+            <div class="arch-node ai-node">
+                <div class="node-icon">✨</div>
+                <div class="node-content">
+                    <h4>Google Gemini</h4>
+                    <span>AI Cloud</span>
+                </div>
+            </div>
+        </div>
+
+        <section class="code-showcase">
+            <div class="code-column glass-panel">
+                <div class="code-header">
+                    <h3>🐍 FastAPI Backend</h3>
+                    <span class="file-name">main.py</span>
+                </div>
+                <div class="code-body">
+                    <pre><code><span class="keyword">from</span> fastapi <span class="keyword">import</span> FastAPI
+<span class="keyword">from</span> gemilive <span class="keyword">import</span> mount_gemilive
+
+app = FastAPI()
+
+<span class="comment"># Instantly proxies secure WebSockets to Gemini Live
+# Handles upstream 16kHz PCM & downstream 24kHz audio</span>
+mount_gemilive(
+    app, 
+    system_prompt=<span class="string">"Be incredibly witty."</span>
+)</code></pre>
+                </div>
+            </div>
+
+            <div class="code-column glass-panel">
+                <div class="code-header">
+                    <h3>🌐 Browser Frontend</h3>
+                    <span class="file-name">app.js</span>
+                </div>
+                <div class="code-body">
+                    <pre><code><span class="keyword">import</span> { GemiliveClient } <span class="keyword">from</span> <span class="string">'gemilive-js'</span>;
+
+<span class="keyword">const</span> client = <span class="keyword">new</span> GemiliveClient(<span class="string">"wss://api.yourdomain.com/ws/live"</span>);
+
+<span class="comment">// Manages mic extraction, downsampling, and canvas video snapping</span>
+<span class="keyword">await</span> client.start();
+
+client.onMessage = (msg) => console.log(msg);
+<span class="comment">// Audio automatically plays back purely gapless over WebAudio Timeline</span></code></pre>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Built for seamless Multimodal Live AI. Open source under the MIT License.</p>
+            <p><a href="https://github.com/saidurpulok/gemilive" target="_blank">Documentation & Setup Guides →</a></p>
+        </footer>
+    </main>
+</body>
+
+</html>
