@@ -57,6 +57,31 @@ export class GemiliveClient {
      * @returns {Promise<void>}
      */
     async start() {
+        if (
+            typeof navigator === "undefined" ||
+            !navigator.mediaDevices ||
+            typeof navigator.mediaDevices.getUserMedia !== "function"
+        ) {
+            const secureContextHint =
+                typeof window !== "undefined" && !window.isSecureContext
+                    ? " This page is not running in a secure context. Use HTTPS (or localhost during development)."
+                    : "";
+            const err = new Error(
+                "Media input is unavailable in this browser/environment. Microphone and camera require a supported browser and secure context." +
+                    secureContextHint
+            );
+            if (this.onError) this.onError(err);
+            throw err;
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true,
+        });
+        this.stream = stream;
+        this._startAudioRecording(new MediaStream(stream.getAudioTracks()));
+        this._setupVideoCapture(stream);
+
         return new Promise((resolve, reject) => {
             this.websocket = new WebSocket(this.url);
 
@@ -65,21 +90,7 @@ export class GemiliveClient {
                 this.websocket.send(JSON.stringify({
                     setup: { system_prompt: this.systemPrompt }
                 }));
-
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                        video: true,
-                    });
-                    this.stream = stream;
-                    this._startAudioRecording(new MediaStream(stream.getAudioTracks()));
-                    this._setupVideoCapture(stream);
-                    resolve();
-                } catch (e) {
-                    this.websocket.close();
-                    if (this.onError) this.onError(e);
-                    reject(e);
-                }
+                resolve();
             };
 
             this.websocket.onmessage = (event) => {
@@ -94,6 +105,7 @@ export class GemiliveClient {
 
             this.websocket.onerror = () => {
                 const err = new Error("WebSocket error. Check your backend URL and server status.");
+                this.stop();
                 if (this.onError) this.onError(err);
                 reject(err);
             };
@@ -340,4 +352,3 @@ export class GemiliveClient {
 if (typeof window !== "undefined") {
     window.GemiliveClient = GemiliveClient;
 }
-
