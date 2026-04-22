@@ -3,7 +3,7 @@ name = "gemilive"
 version = "0.1.1"
 description = "Minimal Gemini Live AI WebSocket proxy for FastAPI — plug and play voice + video AI."
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11.*"
 license = "MIT"
 keywords = ["gemini", "live", "ai", "voice", "video", "fastapi", "websocket"]
 dependencies = [

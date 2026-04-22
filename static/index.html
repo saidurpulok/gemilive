@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Live AI Wrapper Test</title>
-    <script type="module" src="/gemilive-js/index.js"></script>
+    <script type="module" src="/gemilive-js/index.js?v=20260415"></script>
     <style>
         body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .controls { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -83,9 +83,18 @@
         async function initConnection() {
             const token = document.getElementById('token').value;
             const systemPrompt = document.getElementById('systemPrompt').value;
+
+            if (!navigator?.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== "function") {
+                const secureHint = !window.isSecureContext
+                    ? "Open this page on HTTPS (or localhost) to enable camera/mic."
+                    : "Your browser does not expose camera/mic APIs in this context.";
+                appendLog(`Media unavailable: ${secureHint}`, "system");
+                return;
+            }
             
-            // Assuming serving from the same host
-            const wsUrl = `ws://${window.location.host}/ws/live`;
+            // Match page protocol to avoid mixed-content failures on HTTPS.
+            const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            const wsUrl = `${wsProtocol}//${window.location.host}/ws/live`;
             
             client = new GemiliveClient(wsUrl, { token, systemPrompt });
             
@@ -140,7 +149,7 @@
 
                 toggleState(true);
             } catch (e) {
-                appendLog("Failed to start media/connection", "system");
+                appendLog(`Failed to start media/connection: ${e.message || "unknown error"}`, "system");
             }
         }
 
